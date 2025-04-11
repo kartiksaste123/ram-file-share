@@ -11,7 +11,15 @@ services:
       npm run build
       echo "Build completed. Checking build directory..."
       ls -la build
+      echo "Current directory structure:"
+      pwd
+      ls -la
       cd ..
+      echo "Root directory structure:"
+      pwd
+      ls -la
+      echo "Creating a simple index.html in the root directory for testing..."
+      echo "<html><body><h1>RAM File Share</h1><p>This is a test page.</p></body></html>" > index.html
     startCommand: npm start
     envVars:
       - key: PORT

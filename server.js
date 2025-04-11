@@ -20,52 +20,65 @@ const io = socketIo(server, {
 app.use(cors());
 app.use(express.json());
 
-// Check if client build directory exists
-const clientBuildPath = path.join(__dirname, 'client/build');
-const clientBuildExists = fs.existsSync(clientBuildPath);
+// Check possible locations for client build
+const possibleBuildPaths = [
+  path.join(__dirname, 'client/build'),
+  path.join(__dirname, 'build'),
+  path.join(__dirname, '..', 'client/build'),
+  path.join(__dirname, '..', 'build')
+];
 
-// Log detailed information about the client build directory
+let clientBuildPath = null;
+let clientBuildExists = false;
+
+// Log detailed information about the current directory
 console.log(`Current directory: ${__dirname}`);
-console.log(`Client build path: ${clientBuildPath}`);
-console.log(`Client build exists: ${clientBuildExists}`);
+console.log(`Current working directory: ${process.cwd()}`);
 
-if (clientBuildExists) {
-  console.log('Contents of client/build directory:');
-  try {
-    const files = fs.readdirSync(clientBuildPath);
-    files.forEach(file => {
-      console.log(`- ${file}`);
-    });
-  } catch (err) {
-    console.error('Error reading client/build directory:', err);
+// Check each possible build path
+for (const buildPath of possibleBuildPaths) {
+  console.log(`Checking build path: ${buildPath}`);
+  if (fs.existsSync(buildPath)) {
+    console.log(`Found client build at: ${buildPath}`);
+    clientBuildPath = buildPath;
+    clientBuildExists = true;
+    break;
   }
-} else {
-  console.log('Client build directory does not exist. Checking parent directories:');
-  try {
-    const parentDir = path.join(__dirname, 'client');
-    console.log(`Parent directory exists: ${fs.existsSync(parentDir)}`);
-    if (fs.existsSync(parentDir)) {
-      console.log('Contents of client directory:');
-      const files = fs.readdirSync(parentDir);
-      files.forEach(file => {
-        console.log(`- ${file}`);
-      });
-    }
-  } catch (err) {
-    console.error('Error checking parent directories:', err);
-  }
+}
+
+// If no build directory found, check for a simple index.html in the root
+const rootIndexPath = path.join(__dirname, 'index.html');
+const rootIndexExists = fs.existsSync(rootIndexPath);
+console.log(`Root index.html exists: ${rootIndexExists}`);
+
+// Log directory contents for debugging
+console.log('Contents of current directory:');
+try {
+  const files = fs.readdirSync(__dirname);
+  files.forEach(file => {
+    console.log(`- ${file}`);
+  });
+} catch (err) {
+  console.error('Error reading current directory:', err);
 }
 
 // Serve static files from the React app if the directory exists
 if (clientBuildExists) {
+  console.log(`Serving static files from: ${clientBuildPath}`);
   app.use(express.static(clientBuildPath));
   
   // Root route handler
   app.get('/', (req, res) => {
     res.sendFile(path.join(clientBuildPath, 'index.html'));
   });
+} else if (rootIndexExists) {
+  // Serve the simple index.html if it exists
+  console.log('Serving simple index.html from root directory');
+  app.get('/', (req, res) => {
+    res.sendFile(rootIndexPath);
+  });
 } else {
-  // Fallback route if client build doesn't exist
+  // Fallback route if no build or index.html exists
   app.get('/', (req, res) => {
     res.send(`
       <html>
@@ -102,7 +115,10 @@ app.get('/api/status', (req, res) => {
     message: 'RAM File Share API is running',
     clientBuildAvailable: clientBuildExists,
     currentDirectory: __dirname,
-    clientBuildPath: clientBuildPath
+    workingDirectory: process.cwd(),
+    clientBuildPath: clientBuildPath,
+    rootIndexExists: rootIndexExists,
+    possibleBuildPaths: possibleBuildPaths
   });
 });
 
@@ -202,4 +218,7 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Client build available: ${clientBuildExists}`);
+  if (clientBuildExists) {
+    console.log(`Client build path: ${clientBuildPath}`);
+  }
 }); 
