@@ -1,15 +1,15 @@
 services:
   - type: web
-    name: ram-file-share-api
+    name: ram-file-share
     env: node
-    buildCommand: npm install
+    buildCommand: npm install && cd client && npm install && npm run build
     startCommand: npm start
     envVars:
       - key: PORT
         value: 3001
       - key: NODE_ENV
         value: production
-    healthCheckPath: /
+    healthCheckPath: /api/status
     autoDeploy: true
 
   - type: web

@@ -4,6 +4,7 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const crypto = require('crypto-js');
 const { v4: uuidv4 } = require('uuid');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -17,6 +18,19 @@ const io = socketIo(server, {
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'client/build')));
+
+// Root route handler
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+});
+
+// API status endpoint
+app.get('/api/status', (req, res) => {
+  res.json({ status: 'ok', message: 'RAM File Share API is running' });
+});
 
 // In-memory storage for file metadata and chunks
 const fileStorage = new Map();
