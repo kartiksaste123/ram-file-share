@@ -5,6 +5,7 @@ const cors = require('cors');
 const crypto = require('crypto-js');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -19,17 +20,32 @@ const io = socketIo(server, {
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, 'client/build')));
+// Check if client build directory exists
+const clientBuildPath = path.join(__dirname, 'client/build');
+const clientBuildExists = fs.existsSync(clientBuildPath);
 
-// Root route handler
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-});
+// Serve static files from the React app if the directory exists
+if (clientBuildExists) {
+  app.use(express.static(clientBuildPath));
+  
+  // Root route handler
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+} else {
+  // Fallback route if client build doesn't exist
+  app.get('/', (req, res) => {
+    res.send('RAM File Share API is running. Client build is not available yet.');
+  });
+}
 
 // API status endpoint
 app.get('/api/status', (req, res) => {
-  res.json({ status: 'ok', message: 'RAM File Share API is running' });
+  res.json({ 
+    status: 'ok', 
+    message: 'RAM File Share API is running',
+    clientBuildAvailable: clientBuildExists
+  });
 });
 
 // In-memory storage for file metadata and chunks
@@ -127,4 +143,5 @@ setInterval(() => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Client build available: ${clientBuildExists}`);
 }); 
