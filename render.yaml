@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: ram-file-share-api
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+    healthCheckPath: /
+    autoDeploy: true
+
+  - type: web
+    name: ram-file-share-client
+    env: static
+    buildCommand: cd client && npm install && npm run build
+    staticPublishPath: client/build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://ram-file-share-api.onrender.com
+    autoDeploy: true 
