@@ -2,12 +2,23 @@ services:
   - type: web
     name: ram-file-share
     env: node
-    buildCommand: npm install && cd client && npm install && npm run build
+    buildCommand: |
+      echo "Installing backend dependencies..."
+      npm install
+      echo "Installing frontend dependencies..."
+      cd client && npm install
+      echo "Building frontend..."
+      npm run build
+      echo "Build completed. Checking build directory..."
+      ls -la build
+      cd ..
     startCommand: npm start
     envVars:
       - key: PORT
         value: 3001
       - key: NODE_ENV
         value: production
+      - key: REACT_APP_API_URL
+        value: https://ram-file-share.onrender.com
     healthCheckPath: /api/status
     autoDeploy: true 

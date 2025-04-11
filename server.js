@@ -24,6 +24,38 @@ app.use(express.json());
 const clientBuildPath = path.join(__dirname, 'client/build');
 const clientBuildExists = fs.existsSync(clientBuildPath);
 
+// Log detailed information about the client build directory
+console.log(`Current directory: ${__dirname}`);
+console.log(`Client build path: ${clientBuildPath}`);
+console.log(`Client build exists: ${clientBuildExists}`);
+
+if (clientBuildExists) {
+  console.log('Contents of client/build directory:');
+  try {
+    const files = fs.readdirSync(clientBuildPath);
+    files.forEach(file => {
+      console.log(`- ${file}`);
+    });
+  } catch (err) {
+    console.error('Error reading client/build directory:', err);
+  }
+} else {
+  console.log('Client build directory does not exist. Checking parent directories:');
+  try {
+    const parentDir = path.join(__dirname, 'client');
+    console.log(`Parent directory exists: ${fs.existsSync(parentDir)}`);
+    if (fs.existsSync(parentDir)) {
+      console.log('Contents of client directory:');
+      const files = fs.readdirSync(parentDir);
+      files.forEach(file => {
+        console.log(`- ${file}`);
+      });
+    }
+  } catch (err) {
+    console.error('Error checking parent directories:', err);
+  }
+}
+
 // Serve static files from the React app if the directory exists
 if (clientBuildExists) {
   app.use(express.static(clientBuildPath));
@@ -35,7 +67,31 @@ if (clientBuildExists) {
 } else {
   // Fallback route if client build doesn't exist
   app.get('/', (req, res) => {
-    res.send('RAM File Share API is running. Client build is not available yet.');
+    res.send(`
+      <html>
+        <head>
+          <title>RAM File Share API</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+            h1 { color: #1976d2; }
+            .status { background-color: #f5f5f5; padding: 15px; border-radius: 5px; }
+            .error { color: #d32f2f; }
+          </style>
+        </head>
+        <body>
+          <h1>RAM File Share API</h1>
+          <div class="status">
+            <p>The API is running, but the client build is not available yet.</p>
+            <p>This could be due to a build error or the build process not completing successfully.</p>
+            <p>Please check the Render logs for more information.</p>
+          </div>
+          <div class="status">
+            <h2>API Status</h2>
+            <p>You can check the API status at <a href="/api/status">/api/status</a></p>
+          </div>
+        </body>
+      </html>
+    `);
   });
 }
 
@@ -44,7 +100,9 @@ app.get('/api/status', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: 'RAM File Share API is running',
-    clientBuildAvailable: clientBuildExists
+    clientBuildAvailable: clientBuildExists,
+    currentDirectory: __dirname,
+    clientBuildPath: clientBuildPath
   });
 });
 
